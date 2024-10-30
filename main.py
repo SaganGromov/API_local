@@ -13,41 +13,21 @@ class APIHandler(BaseHTTPRequestHandler):
     def do_HEAD(self):
         self._authenticate()
 
-    def do_GET(self):
+    def do_POST(self):
         if not self._authenticate():
             return
 
-        # Define main API route to run scripts
-        if self.path.startswith('/api/run-script'):
-            query_components = parse_qs(urlparse(self.path).query)
-            script_name = query_components.get("script", [None])[0]
+        # Process the POST request for the `/api/speak` endpoint
+        if self.path == '/api/speak':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            data = json.loads(post_data)
 
-            # Define script paths
-            script_paths = {
-                "script1": "path/to/script1.sh",
-                "script2": "path/to/script2.sh",
-                "script3": "path/to/script3.sh"
-            }
-
-            if script_name in script_paths:
-                result = self.run_script(script_paths[script_name])
-                self.send_response(200 if result['status'] == 'success' else 500)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps(result).encode())
-            else:
-                self.send_response(400)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "error", "message": "Invalid script name"}).encode())
-
-        # New endpoint to convert text to speech and play audio
-        elif self.path.startswith('/api/speak'):
-            query_components = parse_qs(urlparse(self.path).query)
-            phrase = query_components.get("phrase", [None])[0]
+            phrase = data.get("phrase")
+            lang = data.get("lang", "pt")  # Default to Portuguese if no language is specified
 
             if phrase:
-                result = self.generate_and_play_audio(phrase)
+                result = self.generate_and_play_audio(phrase, lang)
                 self.send_response(200 if result['status'] == 'success' else 500)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -70,17 +50,17 @@ class APIHandler(BaseHTTPRequestHandler):
         except subprocess.CalledProcessError as e:
             return {'status': 'error', 'output': e.output.decode()}
 
-    def generate_and_play_audio(self, phrase):
+    def generate_and_play_audio(self, phrase, lang):
         try:
-            # Generate audio from phrase
-            tts = gTTS(phrase, lang='en')
+            # Generate audio from phrase in the specified language
+            tts = gTTS(phrase, lang=lang)
             audio_file = "phrase.mp3"
             tts.save(audio_file)
 
             # Play the generated audio file
             subprocess.run(['ffplay', '-nodisp', '-autoexit', audio_file])
 
-            return {'status': 'success', 'message': f'Audio played for phrase: {phrase}'}
+            return {'status': 'success', 'message': f'Audio played for phrase: {phrase} in language: {lang}'}
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
 
