@@ -80,6 +80,6 @@ class APIHandler(BaseHTTPRequestHandler):
         return False
 
 if __name__ == '__main__':
-    httpd = HTTPServer(('localhost', 8000), APIHandler)
+    httpd = HTTPServer(('0.0.0.0', 8000), APIHandler)
     print("API server running on port 8000")
     httpd.serve_forever()
