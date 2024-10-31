@@ -46,7 +46,7 @@ class APIHandler(BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                result = {'status': 'success', 'message': f'Código morse reproduzido para a mensagem: {message}'}
+                result = {'status': 'success', 'message': f'Código morse reproduzido: {message}'}
                 self.wfile.write(json.dumps(result, ensure_ascii=False).encode('utf-8'))
             elif phrase:
                 # Handle single phrase request
