@@ -5,6 +5,7 @@ import json
 import base64
 import subprocess
 import os
+from datetime import datetime, timedelta
 
 class APIHandler(BaseHTTPRequestHandler):
     USERNAME = 'user'
@@ -55,6 +56,48 @@ class APIHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode())
+            elif self.path == '/api/alarm':
+                content_length = int(self.headers['Content-Length'])
+                post_data = self.rfile.read(content_length)
+                data = json.loads(post_data)
+
+                if data.get("alarm") and "time" in data:
+                    alarm_time = data["time"]
+                    try:
+                        # Parse HH_MM format
+                        alarm_hour, alarm_minute = map(int, alarm_time.split('_'))
+                        now = datetime.now()
+                        alarm_datetime = now.replace(hour=alarm_hour, minute=alarm_minute, second=0, microsecond=0)
+
+                        # If the time has already passed today, set it for tomorrow
+                        if alarm_datetime < now:
+                            alarm_datetime += timedelta(days=1)
+
+                        # Calculate the delay in seconds until the alarm time
+                        delay = (alarm_datetime - now).total_seconds()
+
+                        # Schedule ffplay to run at the specified time
+                        subprocess.Popen(["sleep", str(delay), "&&", "ffplay", "-nodisp", "-autoexit", 
+                                        "mixkit-retro-game-emergency-alarm-1000.wav"], shell=True)
+
+                        # Send response
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.generate_and_play_audio(f"Alarme criado para {alarm_time} com sucesso! Bons sonhos.")
+                        self.wfile.write(json.dumps({"status": "success", "message": "Alarm set for " + alarm_time}).encode())
+                    except ValueError:
+                        # Invalid time format provided
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({"status": "error", "message": "Invalid time format"}).encode())
+                else:
+                    # Alarm or time missing in the request
+                    self.send_response(400)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({"status": "error", "message": "Alarm flag or time missing"}).encode())
             else:
                 # No phrase provided
                 self.send_response(400)
