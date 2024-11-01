@@ -122,6 +122,97 @@ Benefícios do uso do Tailscale:
 - FFplay (parte do FFmpeg)
 - Tailscale (opcional, para acesso remoto)
 
+## Instalação no Raspberry Pi
+
+Esta API é perfeitamente adequada para rodar em um Raspberry Pi, tornando-o um hub central de automação residencial. Aqui está um guia passo a passo para configurar o projeto:
+
+### Preparação do Raspberry Pi
+
+1. Instale o Raspberry Pi OS (anteriormente Raspbian)
+
+   ```bash
+   # Atualize o sistema primeiro
+   sudo apt update && sudo apt upgrade -y
+   ```
+
+2. Instale as dependências necessárias
+
+   ```bash
+   sudo apt install -y python3-pip ffmpeg git
+   ```
+
+3. Configure o áudio (se necessário)
+
+   ```bash
+   # Verifique os dispositivos de áudio disponíveis
+   aplay -l
+   
+   # Se necessário, defina o dispositivo de áudio padrão editando
+   sudo nano /usr/share/alsa/alsa.conf
+   ```
+
+### Instalação do Projeto
+
+1. Clone o repositório
+
+   ```bash
+   git clone [URL_DO_REPOSITORIO]
+   cd [NOME_DO_DIRETORIO]
+   ```
+
+2. Instale as dependências Python
+
+   ```bash
+   pip3 install gTTS
+   ```
+
+3. Configure o projeto para iniciar automaticamente (opcional)
+
+   ```bash
+   # Crie um serviço systemd
+   sudo nano /etc/systemd/system/home-automation.service
+   ```
+
+   Adicione o seguinte conteúdo:
+
+   ```ini
+   [Unit]
+   Description=Home Automation API
+   After=network.target
+
+   [Service]
+   ExecStart=/usr/bin/python3 /caminho/para/seu/main.py
+   WorkingDirectory=/caminho/para/seu/diretorio
+   StandardOutput=inherit
+   StandardError=inherit
+   Restart=always
+   User=pi
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+4. Ative e inicie o serviço (se configurado como serviço)
+
+   ```bash
+   sudo systemctl enable home-automation
+   sudo systemctl start home-automation
+   ```
+
+### Considerações para Raspberry Pi
+
+- **Desempenho**: O Raspberry Pi é mais que capaz de lidar com as funcionalidades da API, mas considere usar um cartão SD de classe 10 ou superior para melhor performance
+- **Refrigeração**: Para uso contínuo, considere usar um case com ventilação adequada
+- **Backup**: Faça backups regulares do cartão SD para evitar perda de dados
+- **Rede**: Considere usar uma conexão Ethernet para maior estabilidade
+- **GPIO**: O Raspberry Pi permite expandir as funcionalidades usando seus pinos GPIO para controlar dispositivos físicos
+
+### Dicas de Otimização
+
+- Configure um sistema de arquivos temporários em RAM para reduzir a escrita no cartão SD
+- Use um servidor de cache DNS local para melhorar o desempenho das requisições gTTS
+- Configure um watchdog para reiniciar automaticamente em caso de travamentos
+- Considere usar um UPS (No-break) para evitar corrupção do cartão SD em caso de queda de energia
 
 ## Contribuindo
 
