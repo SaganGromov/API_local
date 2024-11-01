@@ -3,6 +3,7 @@ from urllib.parse import urlparse, parse_qs
 from gtts import gTTS
 import json
 import base64
+import time
 import subprocess
 import os
 from datetime import datetime, timedelta
@@ -29,6 +30,11 @@ class APIHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'Endpoint not found')
 
+    def format_datetime_pt(self, now):
+        formatted_time = f"{now.hour:02d}:{now.minute:02d}:{now.second:02d}"
+
+        return f"{formatted_time}".replace(":"," e ")
+
     def handle_speak_request(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
@@ -41,8 +47,17 @@ class APIHandler(BaseHTTPRequestHandler):
 
         if loop:
             response_messages = []
-            for i in range(1, 6):
-                loop_phrase = f"Botafogo {i}, Peñarol 0"
+            for i in range(1, 4):
+                now = datetime.now()
+                if int(self.format_datetime_pt(now)[:2]) <= 12:
+                    sufixo = " da manhã"
+                elif 12 < int(self.format_datetime_pt(now)[:2]) <= 17:
+                    sufixo = " da tarde"
+                elif int(self.format_datetime_pt(now)[:2]) >= 18:
+                    sufixo = "da noite"
+
+                loop_phrase = f"Teste realizado com sucesso às {self.format_datetime_pt(now)}" + sufixo
+                time.sleep(5)
                 result = self.generate_and_play_audio(loop_phrase, lang)
                 response_messages.append(result)
 
@@ -82,7 +97,6 @@ class APIHandler(BaseHTTPRequestHandler):
         try:
             hour, minute = map(int, alarm_time.split('_'))
             alarm_dt = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
-            
             # Format in Portuguese
             day_part = "da manhã" if hour < 12 else "da tarde" if hour < 18 else "da noite"
             time_str = alarm_dt.strftime(f"%H horas e %M minutos {day_part}")
