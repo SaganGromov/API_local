@@ -24,16 +24,28 @@ class APIHandler(BaseHTTPRequestHandler):
             self.handle_speak_request()
         elif self.path == '/api/alarm':
             self.handle_alarm_request()
+        elif self.path == '/api/disable_alarms':
+            self.handle_disable_alarms()
         else:
             # Invalid endpoint
             self.send_response(404)
             self.end_headers()
             self.wfile.write(b'Endpoint not found')
 
+    def handle_disable_alarms(self):
+        # Stop all sleep and ffplay processes (alarms)
+        subprocess.run("killall sleep", shell=True)  # Stops delayed alarms
+        subprocess.run("killall ffplay", shell=True)  # Stops currently playing alarms
+
+        # Respond to indicate success
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps({"status": "success", "message": "All alarms disabled"}).encode())
+
     def format_datetime_pt(self, now):
         formatted_time = f"{now.hour:02d}:{now.minute:02d}:{now.second:02d}"
-
-        return f"{formatted_time}".replace(":"," e ")
+        return f"{formatted_time}".replace(":", " e ")
 
     def handle_speak_request(self):
         content_length = int(self.headers['Content-Length'])
@@ -43,7 +55,7 @@ class APIHandler(BaseHTTPRequestHandler):
         loop = data.get("loop", False)
         phrase = data.get("phrase")
         lang = data.get("lang", "pt")
-        pararAlarme=data.get("parar")
+        pararAlarme = data.get("parar")
 
         if loop:
             response_messages = []
@@ -53,10 +65,10 @@ class APIHandler(BaseHTTPRequestHandler):
                     sufixo = " da manhã"
                 elif 12 < int(self.format_datetime_pt(now)[:2]) <= 17:
                     sufixo = " da tarde"
-                elif int(self.format_datetime_pt(now)[:2]) >= 18:
-                    sufixo = "da noite"
+                else:
+                    sufixo = " da noite"
 
-                loop_phrase = f"Teste realizado com sucesso às {self.format_datetime_pt(now)}" + sufixo
+                loop_phrase = f"Atualização realizada com sucesso às {self.format_datetime_pt(now)}" + sufixo
                 time.sleep(5)
                 result = self.generate_and_play_audio(loop_phrase, lang)
                 response_messages.append(result)
@@ -71,7 +83,7 @@ class APIHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({"status":"sucesso", "message": "alarme desativado!"}).encode())
+            self.wfile.write(json.dumps({"status": "sucesso", "message": "alarme desativado!"}).encode())
         elif morse:
             message = data.get("message")
             subprocess.run('./script.sh ' + f'"{message}"', shell=True, capture_output=True, text=True)
@@ -93,17 +105,15 @@ class APIHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "error", "message": "No phrase provided"}).encode())
 
     def format_alarm_time_to_pt(self, alarm_time):
-    # Parse alarm_time in HH_MM format
         try:
             hour, minute = map(int, alarm_time.split('_'))
             alarm_dt = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
-            # Format in Portuguese
             day_part = "da manhã" if hour < 12 else "da tarde" if hour < 18 else "da noite"
             time_str = alarm_dt.strftime(f"%H horas e %M minutos {day_part}")
-            
             return time_str
         except ValueError:
             return "Formato de hora inválido"
+
     def handle_alarm_request(self):
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
@@ -112,36 +122,27 @@ class APIHandler(BaseHTTPRequestHandler):
         if data.get("alarm") and "time" in data:
             alarm_time = data["time"]
             try:
-                # Parse HH_MM format
                 alarm_hour, alarm_minute = map(int, alarm_time.split('_'))
                 now = datetime.now()
                 alarm_datetime = now.replace(hour=alarm_hour, minute=alarm_minute, second=0, microsecond=0)
 
-                # If the time has already passed today, set it for tomorrow
                 if alarm_datetime < now:
                     alarm_datetime += timedelta(days=1)
 
-                # Calculate the delay in seconds until the alarm time
                 delay = (alarm_datetime - now).total_seconds()
-
-                # Schedule ffplay to run at the specified time
                 subprocess.run(f"bash -c 'sleep {int(delay)}; ffplay -nodisp -autoexit -loop 0 mixkit-retro-game-emergency-alarm-1000.wav' &", shell=True)
 
-
-                # Send response
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.generate_and_play_audio(f"Alarme criado com sucesso para {self.format_alarm_time_to_pt(alarm_time)}! Bons sonhos.", "pt")
                 self.wfile.write(json.dumps({"status": "success", "message": f"Alarm set for {alarm_time}"}).encode())
             except ValueError:
-                # Invalid time format provided
                 self.send_response(400)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"status": "error", "message": "Invalid time format"}).encode())
         else:
-            # Alarm or time missing in the request
             self.send_response(400)
             self.send_header('Content-type', 'application/json')
             self.end_headers()

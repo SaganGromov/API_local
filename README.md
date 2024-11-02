@@ -1,287 +1,81 @@
-# API de Automação Residencial
+# API Residencial Assistente - Documentação
 
-## Visão Geral
-
-Esta é uma API HTTP local projetada para automação residencial e assistência pessoal. Atualmente implementada com feedback de voz e sistemas de alarme, esta API serve como base para uma solução abrangente de automação residencial.
-
-## Começando
-
-1. Clone o repositório
-2. Instale as dependências necessárias
-3. Configure seu nome de usuário e senha no script
-4. Execute o servidor: `python main.py`
-5. A API estará disponível em `http://localhost:8000`
+Este documento detalha todas as funcionalidades presentes na API residencial assistente, exemplos de uso com `curl`, funcionalidades futuras que podem ser implementadas, e melhorias técnicas propostas.
 
 ## Funcionalidades Atuais
 
-### 1. Serviço de Texto para Voz (`api/speak`)
-
-- Converte texto em voz em vários idiomas (padrão: Português)
-- Suporte para:
-  - Conversão regular de texto para voz
-  - Conversão de áudio em código Morse
-  - Anúncios em loop (útil para testes ou notificações periódicas)
-  - Funcionalidade de parada de alarme
-
-### 2. Sistema de Alarme (`api/alarm`)
-
-- Agende alarmes usando formato 24 horas (HH_MM)
-- Agendamento automático para o próximo dia se o horário especificado já passou
-- Confirmação por voz quando o alarme é definido
-- Som de alarme personalizável
-
-## Segurança
-
-- Autenticação Básica implementada
-- Todos os endpoints requerem autenticação
-- Nome de usuário e senha configuráveis
-
-## Detalhes Técnicos
-
-- Construído com `http.server` do Python
-- Usa gTTS (Google Text-to-Speech) para síntese de voz
-- FFplay para reprodução de áudio
-- Comunicação baseada em JSON
-
-## Possíveis Aplicações Futuras
-
-### Sistemas de Segurança
-
-- Notificações de detector de movimento
-- Integração com câmeras de segurança
-- Alertas de sensores de portas/janelas
-- Controle de portão de garagem
-- Integração com campainha com anúncios de voz
-
-### Automação Residencial
-
-- Controle de iluminação inteligente
-- Monitoramento de temperatura e controle de HVAC
-- Sistemas automatizados de irrigação
-- Monitoramento de consumo de energia
-- Controle de eletrodomésticos inteligentes
-
-### Assistente Pessoal
-
-- Anúncios de agenda diária
-- Atualizações meteorológicas
-- Resumos de notícias
-- Lembretes de medicação
-- Notificações de reuniões
-
-### Entretenimento
-
-- Controle de reprodução de música
-- Integração com Smart TV
-- Controle de voz para sistemas de jogos
-- Controle de iluminação para festas
-
-### Automação de Utilidades
-
-- Sistemas de backup automatizados
-- Monitoramento de rede
-- Verificações de saúde do servidor
-- Tarefas periódicas de manutenção
-
-## Exemplos de Uso da API
-
-### Texto para Voz
+### 1. /api/speak
+- **Descrição**: Converte texto em áudio e reproduz na saída de áudio.
+- **Parâmetros**:
+  - `phrase` (obrigatório): Texto a ser convertido e reproduzido.
+  - `lang` (opcional): Idioma para o áudio gerado (padrão: `pt`).
+  - `loop` (opcional): Define se o áudio deve ser repetido três vezes.
+  - `morse` (opcional): Converte e toca a frase em código Morse.
+- **Exemplo**:
 
 ```bash
 curl -X POST http://localhost:8000/api/speak \
-  -H "Authorization: Basic dXNlcjpwYXNz" \
-  -H "Content-Type: application/json" \
-  -d '{"phrase": "Olá Mundo", "lang": "pt"}'
+     -u user:pass \
+     -H "Content-Type: application/json" \
+     -d '{"phrase": "Bom dia!", "lang": "pt", "loop": true}'
 ```
 
-### Configurando um Alarme
+### 2. /api/alarm
+- **Descrição**: Configura um alarme para reproduzir um som em um horário específico.
+- **Parâmetros**:
+  - `time` (obrigatório): Horário do alarme no formato `HH_MM`.
+  - `alarm` (obrigatório): Indica a configuração do alarme.
+- **Exemplo**:
 
 ```bash
 curl -X POST http://localhost:8000/api/alarm \
-  -H "Authorization: Basic dXNlcjpwYXNz" \
-  -H "Content-Type: application/json" \
-  -d '{"alarm": true, "time": "07_30"}'
+     -u user:pass \
+     -H "Content-Type: application/json" \
+     -d '{"alarm": true, "time": "08_30"}'
 ```
 
-## Acesso Remoto
+### 3. /api/disable_alarms
+- **Descrição**: Desativa todos os alarmes ativos e pendentes, interrompendo qualquer áudio em execução.
+- **Exemplo**:
 
-Embora esta API seja projetada para execução local, ela pode ser exposta com segurança à internet usando [Tailscale](https://tailscale.com/). O Tailscale fornece uma rede mesh segura e criptografada que permite acessar sua API de automação residencial de qualquer lugar do mundo, sem comprometer a segurança.
+```bash
+curl -X POST http://localhost:8000/api/disable_alarms \
+     -u user:pass \
+     -H "Content-Type: application/json"
+```
 
-Benefícios do uso do Tailscale:
+## Funcionalidades Futuras (Sugestões)
 
-- Criptografia ponta a ponta
-- VPN sem configuração
-- Não requer redirecionamento de porta
-- Controle de acesso e autenticação
-- Suporte a autenticação multifator
+Aqui estão algumas funcionalidades criativas e naturais que podem ser implementadas no futuro:
 
-## Requisitos de Instalação
+1. **Controle de iluminação**: Integração com dispositivos de iluminação para acender/apagar luzes via comandos da API.
+2. **Controle de temperatura**: Ajuste de termostatos para regular a temperatura ambiente.
+3. **Controle de cortinas**: Abrir e fechar cortinas de forma remota.
+4. **Automatização de segurança**: Ativação de alarmes e fechaduras de portas.
+5. **Notificações de eventos**: Envio de notificações para atividades suspeitas, visitantes, ou alarmes importantes.
+6. **Integração com assistentes de voz**: Conectar a API com Google Assistant ou Alexa.
+7. **Modo de economia de energia**: Reduzir a iluminação e ajustar a temperatura quando ninguém estiver em casa.
+8. **Monitoramento de qualidade do ar**: Exibir dados sobre poluição e alertar para ventilação quando necessário.
+9. **Controle de entretenimento**: Comandos para TV e dispositivos de streaming.
+10. **Integração com calendário**: Programação de alarmes com base em eventos de calendário.
 
-- Python 3.x
-- gTTS (`pip install gTTS`)
-- FFplay (parte do FFmpeg)
-- Tailscale (opcional, para acesso remoto)
+## Seção de TODOs - Melhorias Técnicas
 
-## Instalação no Raspberry Pi
+Abaixo estão melhorias técnicas sugeridas para aprimorar a API, listadas em ordem de prioridade:
 
-Esta API é perfeitamente adequada para rodar em um Raspberry Pi, tornando-o um hub central de automação residencial. Aqui está um guia passo a passo para configurar o projeto:
+1. **Adicionar autenticação JWT** para maior segurança.
+2. **Gerenciamento de sessões e limite de requisições** para prevenir abuso da API.
+3. **Implementar logging avançado** para monitoramento de requisições e respostas.
+4. **Gerenciamento de processos aprimorado** para interromper comandos específicos de `sleep` e `ffplay`.
+5. **Testes unitários e de integração** para validar funcionalidades.
+6. **Configuração de variáveis de ambiente** para facilitar o uso em diferentes ambientes.
+7. **Integração com banco de dados** para salvar logs e preferências do usuário.
+8. **Implementar fila de tarefas** para agendamento e gerenciamento de comandos de longo prazo.
+9. **Suporte a WebSocket** para atualizações em tempo real.
+10. **Adicionar documentação Swagger** para visualização de endpoints.
 
-### Preparação do Raspberry Pi
+## Expondo a API para Controle Externo Seguro
 
-1. Instale o Raspberry Pi OS (anteriormente Raspbian)
-
-   ```bash
-   # Atualize o sistema primeiro
-   sudo apt update && sudo apt upgrade -y
-   ```
-
-2. Instale as dependências necessárias
-
-   ```bash
-   sudo apt install -y python3-pip ffmpeg git
-   ```
-
-3. Configure o áudio (se necessário)
-
-   ```bash
-   # Verifique os dispositivos de áudio disponíveis
-   aplay -l
-   
-   # Se necessário, defina o dispositivo de áudio padrão editando
-   sudo nano /usr/share/alsa/alsa.conf
-   ```
-
-### Instalação do Projeto
-
-1. Clone o repositório
-
-   ```bash
-   git clone [URL_DO_REPOSITORIO]
-   cd [NOME_DO_DIRETORIO]
-   ```
-
-2. Instale as dependências Python
-
-   ```bash
-   pip3 install gTTS
-   ```
-
-3. Configure o projeto para iniciar automaticamente (opcional)
-
-   ```bash
-   # Crie um serviço systemd
-   sudo nano /etc/systemd/system/home-automation.service
-   ```
-
-   Adicione o seguinte conteúdo:
-
-   ```ini
-   [Unit]
-   Description=Home Automation API
-   After=network.target
-
-   [Service]
-   ExecStart=/usr/bin/python3 /caminho/para/seu/main.py
-   WorkingDirectory=/caminho/para/seu/diretorio
-   StandardOutput=inherit
-   StandardError=inherit
-   Restart=always
-   User=pi
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-4. Ative e inicie o serviço (se configurado como serviço)
-
-   ```bash
-   sudo systemctl enable home-automation
-   sudo systemctl start home-automation
-   ```
-
-### Considerações para Raspberry Pi
-
-- **Desempenho**: O Raspberry Pi é mais que capaz de lidar com as funcionalidades da API, mas considere usar um cartão SD de classe 10 ou superior para melhor performance
-- **Refrigeração**: Para uso contínuo, considere usar um case com ventilação adequada
-- **Backup**: Faça backups regulares do cartão SD para evitar perda de dados
-- **Rede**: Considere usar uma conexão Ethernet para maior estabilidade
-- **GPIO**: O Raspberry Pi permite expandir as funcionalidades usando seus pinos GPIO para controlar dispositivos físicos
-
-### Dicas de Otimização
-
-- Configure um sistema de arquivos temporários em RAM para reduzir a escrita no cartão SD
-- Use um servidor de cache DNS local para melhorar o desempenho das requisições gTTS
-- Configure um watchdog para reiniciar automaticamente em caso de travamentos
-- Considere usar um UPS (No-break) para evitar corrupção do cartão SD em caso de queda de energia
-
-## Contribuindo
-
-Sinta-se à vontade para fazer um fork deste projeto e adicionar suas próprias funcionalidades de automação. A natureza modular da API facilita a extensão com novos endpoints e funcionalidades.
-
-## Melhorias Técnicas Propostas
-
-### Alta Prioridade
-
-1. **Refatoração da Estrutura Base**
-   - Separar handlers em classes específicas (`SpeakHandler`, `AlarmHandler`)
-   - Implementar padrão de configuração usando `dotenv` ou `yaml`
-   - Mover credenciais para variáveis de ambiente
-   - Criar classe base para gerenciamento de áudio
-
-2. **Gerenciamento de Arquivos**
-   - Implementar sistema de limpeza automática de arquivos MP3
-   - Criar diretório temporário dedicado para arquivos de áudio
-   - Usar `tempfile` para nomes únicos de arquivos
-   - Implementar mecanismo de cache para frases comuns
-
-3. **Tratamento de Erros**
-   - Adicionar logging estruturado com `logging`
-   - Implementar tratamento específico para erros de gTTS
-   - Melhorar mensagens de erro para o cliente
-   - Validar parâmetros de entrada com schemas
-
-4. **Melhorias no Sistema de Alarme**
-   - Implementar persistência de alarmes
-   - Adicionar suporte a alarmes recorrentes
-   - Criar sistema de fila para múltiplos alarmes
-   - Melhorar o gerenciamento de processos do `ffplay`
-
-5. **Segurança**
-   - Implementar rate limiting por IP
-   - Adicionar sistema de tokens JWT
-   - Criar diferentes níveis de acesso
-   - Implementar HTTPS
-
-6. **Otimização de Performance**
-   - Implementar pool de threads para processos longos
-   - Adicionar cache para requisições frequentes
-   - Otimizar chamadas do sistema de arquivos
-   - Implementar timeout para requisições
-
-7. **Documentação e Testes**
-   - Adicionar docstrings em todas as funções
-   - Criar testes unitários
-   - Implementar documentação OpenAPI/Swagger
-   - Adicionar exemplos de uso em `curl` e `Python`
-
-8. **Funcionalidades Adicionais**
-   - Suporte a diferentes vozes/engines TTS
-   - Sistema de notificação de status
-   - Interface web simples
-   - Endpoints de healthcheck
-
-9. **Melhorias na API**
-   - Versionamento de API (`v1/`, `v2/`)
-   - Respostas HTTP mais detalhadas
-   - Suporte a CORS
-   - Paginação para endpoints futuros
-
-10. **DevOps**
-    - Dockerização da aplicação
-    - Scripts de backup
-    - Monitoramento de recursos
-    - Logs estruturados em JSON
-
-## Licença
-
-Este projeto é de código aberto, sinta-se à vontade para usar e modificar conforme suas necessidades.
+É possível expor esta API para acesso externo de forma segura utilizando [Tailscale](https://tailscale.com/), uma VPN simples de configurar que permite acesso seguro à sua rede local pela internet.
+- **Configuração**: Após instalar e configurar o Tailscale, você pode expor o endereço local da API (por exemplo, `http://localhost:8000`) e controlá-la remotamente com segurança.
+- **Benefícios**: Isso torna possível monitorar e controlar os dispositivos conectados à API, como alarmes e outros dispositivos automatizados, de qualquer lugar com segurança.
